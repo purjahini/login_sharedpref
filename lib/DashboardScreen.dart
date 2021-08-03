@@ -16,9 +16,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void accessSharedPref() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    widget.nama = prefs.getString('nama');
-    widget.provinsi = prefs.getString('provinsi');
-    widget.token = prefs.getString('token');
+    setState(() {
+      widget.nama = prefs.getString('nama');
+      widget.provinsi = prefs.getString('provinsi');
+      widget.token = prefs.getString('token');
+    });
   }
 
   @override

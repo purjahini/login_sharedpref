@@ -8,18 +8,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(new MyApp());
 
-String username='';
-
 class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Login PHP My Admin',
+      title: 'Login App',
       home: new MyHomePage(),
       routes: <String,WidgetBuilder>{
-        '/MemberPage': (BuildContext context)=> new DashboardScreen(),
+        '/DashboardScreen': (BuildContext context)=> new DashboardScreen(),
         '/MyHomePage': (BuildContext context)=> new MyHomePage(),
       },
     );
@@ -30,12 +28,27 @@ class Items {
   String provinsi;
 
   Items({this.nama, this.provinsi});
+
+  factory Items.fromJSON(Map<String, dynamic> json) {
+    return Items(
+        nama: json['Nama'],
+        provinsi: json['Propinsi']
+    );
+  }
 }
 class UserData {
   List<Items> items;
   String token;
 
   UserData({this.items, this.token});
+
+  factory UserData.fromJSON(Map<String, dynamic> json) {
+    return UserData(
+        items: List.from(json['data']['items'])
+            .map((e) => Items.fromJSON(e)).toList(),
+        token:  json['data']['token']
+    );
+  }
 }
 
 class MyHomePage extends StatefulWidget {
@@ -49,26 +62,26 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController pass=new TextEditingController();
 
   String msg='';
-  String loginURL="103.226.139.253:32258/v1/auth/loginpengguna";
-  UserData userData = UserData();
-  List<Items> item = <Items>[];
+  String loginURL="http://103.226.139.253:32258/v1/auth/loginpengguna";
 
   Future<UserData> _login() async {
     Map<String, String> formData = <String, String>{
       "email" : "${user.text}",
       "password" : "${pass.text}"
     };
-    var request = http.MultipartRequest('POST', Uri.parse(loginURL));
-    request.fields.addAll(formData);
-    var response = await request.send();
-    var respStr = await response.stream.bytesToString();
-
-    var datauser = json.decode(respStr);
-
-    userData.token = datauser['data']['token'];
-    item = datauser['data']['items'];
-    userData.items = item;
-    return userData;
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(loginURL));
+      request.fields.addAll(formData);
+      var response = await request.send();
+      var respStr = await http.Response.fromStream(response);
+      print("Response: ${respStr.body}");
+      var datauser = json.decode(respStr.body);
+      print("Data User: $datauser");
+      return UserData.fromJSON(datauser);
+    } catch (e) {
+      print("Error adalah: $e");
+      return UserData();
+    }
   }
 
   @override
@@ -107,7 +120,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) => DashboardScreen()
                     ));
-                  });
+                  }
+                  );
                 },
               ),
 
